@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carmen - Spanish Voice Tutor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: #0a1628;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .title {
+            font-size: 64px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 12px;
+            letter-spacing: -1.5px;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 80px;
+            font-weight: 400;
+        }
+
+        /* Orb */
+        .orb-container {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            margin: 0 auto 50px;
+        }
+
+        .orb {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #4facfe 0%, #00f2fe 50%, #0575e6 100%);
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 60px rgba(79, 172, 254, 0.6),
+                        0 0 120px rgba(79, 172, 254, 0.3),
+                        inset 0 0 60px rgba(255, 255, 255, 0.1);
+        }
+
+        .orb:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 80px rgba(79, 172, 254, 0.7),
+                        0 0 140px rgba(79, 172, 254, 0.4),
+                        inset 0 0 60px rgba(255, 255, 255, 0.15);
+        }
+
+        .orb:active {
+            transform: scale(0.97);
+        }
+
+        /* Recording state */
+        .orb.recording {
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 0 60px rgba(79, 172, 254, 0.6),
+                            0 0 120px rgba(79, 172, 254, 0.3),
+                            inset 0 0 60px rgba(255, 255, 255, 0.1);
+            }
+            50% {
+                box-shadow: 0 0 100px rgba(79, 172, 254, 0.8),
+                            0 0 160px rgba(79, 172, 254, 0.5),
+                            inset 0 0 80px rgba(255, 255, 255, 0.2);
+            }
+        }
+
+        /* Audio visualizer */
+        .visualizer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+        }
+
+        /* Status text */
+        .status {
+            font-size: 22px;
+            color: white;
+            font-weight: 500;
+            min-height: 30px;
+        }
+
+        /* Permission modal */
+        .permission-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 22, 40, 0.95);
+            backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .permission-modal.hidden {
+            display: none;
+        }
+
+        .permission-content {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(40px);
+            padding: 60px 70px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            max-width: 500px;
+        }
+
+        .permission-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 30px;
+            background: radial-gradient(circle, #4facfe 0%, #0575e6 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 20px 60px rgba(79, 172, 254, 0.4);
+        }
+
+        .permission-icon svg {
+            width: 40px;
+            height: 40px;
+            fill: white;
+        }
+
+        .permission-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 16px;
+        }
+
+        .permission-text {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 35px;
+            line-height: 1.6;
+        }
+
+        .permission-button {
+            background: linear-gradient(135deg, #4facfe 0%, #0575e6 100%);
+            color: white;
+            border: none;
+            padding: 18px 50px;
+            border-radius: 50px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(79, 172, 254, 0.3);
+        }
+
+        .permission-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(79, 172, 254, 0.4);
+        }
+
+        .permission-button:active {
+            transform: translateY(0);
+        }
+
+        /* Error */
+        .error {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: 450px;
+            width: 90%;
+            padding: 18px 28px;
+            background: rgba(255, 59, 48, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 59, 48, 0.3);
+            border-radius: 16px;
+            color: white;
+            font-size: 15px;
+            font-weight: 500;
+            display: none;
+            z-index: 10000;
+        }
+
+        .error.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .audio-player {
+            display: none;
+        }
+
+        .hint {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.4);
+            font-weight: 400;
+        }
+
+        @media (max-width: 600px) {
+            .title {
+                font-size: 48px;
+            }
+
+            .orb-container,
+            .orb,
+            .visualizer {
+                width: 200px;
+                height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Permission Modal -->
+    <div class="permission-modal" id="permissionModal">
+        <div class="permission-content">
+            <div class="permission-icon">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                </svg>
+            </div>
+            <div class="permission-title">Enable Microphone</div>
+            <div class="permission-text">Carmen needs microphone access to help you learn Spanish through voice conversation</div>
+            <button class="permission-button" id="enableButton">Enable Microphone</button>
+        </div>
+    </div>
+
+    <!-- Main Interface -->
+    <div class="container">
+        <h1 class="title">Carmen</h1>
+        <p class="subtitle">Spanish Voice Tutor</p>
+
+        <div class="orb-container">
+            <div class="orb" id="orb">
+                <canvas class="visualizer" id="visualizer"></canvas>
+            </div>
+        </div>
+
+        <div class="status" id="status">Tap to speak</div>
+    </div>
+
+    <div class="hint" id="hint">Try: "How do I say hello?"</div>
+
+    <div class="audio-player">
+        <audio id="audio" autoplay></audio>
+    </div>
+
+    <div class="error" id="error"></div>
+
+    <script>
+        const WEBHOOK_URL = 'https://arianab68.app.n8n.cloud/webhook/99c27b29-071e-4cbf-b60b-bfc54d530b3d';
+        const MIN_AUDIO_LEVEL = 0.01; // Minimum audio level to consider as speech
+        const MIN_RECORDING_LENGTH = 500; // Minimum recording length in ms
+
+        // Elements
+        const permissionModal = document.getElementById('permissionModal');
+        const enableButton = document.getElementById('enableButton');
+        const orb = document.getElementById('orb');
+        const status = document.getElementById('status');
+        const hint = document.getElementById('hint');
+        const audio = document.getElementById('audio');
+        const errorEl = document.getElementById('error');
+        const visualizer = document.getElementById('visualizer');
+        const ctx = visualizer.getContext('2d');
+
+        // State
+        let stream = null;
+        let mediaRecorder = null;
+        let audioContext = null;
+        let analyser = null;
+        let dataArray = null;
+        let audioChunks = [];
+        let isRecording = false;
+        let animationId = null;
+        let recordingStartTime = 0;
+        let hasAudio = false;
+
+        // Setup canvas
+        visualizer.width = 220;
+        visualizer.height = 220;
+
+        // Enable microphone
+        enableButton.addEventListener('click', async () => {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    } 
+                });
+                
+                // Audio context for visualization and level detection
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                const source = audioContext.createMediaStreamSource(stream);
+                source.connect(analyser);
+                analyser.fftSize = 256;
+                analyser.smoothingTimeConstant = 0.8;
+                const bufferLength = analyser.frequencyBinCount;
+                dataArray = new Uint8Array(bufferLength);
+
+                permissionModal.classList.add('hidden');
+
+            } catch (error) {
+                console.error('Microphone error:', error);
+                showError('Could not access microphone. Please allow permissions and refresh.');
+            }
+        });
+
+        // Orb click
+        orb.addEventListener('click', () => {
+            if (!stream) {
+                showError('Please enable microphone first');
+                return;
+            }
+
+            if (!isRecording) {
+                startRecording();
+            } else {
+                stopRecording();
+            }
+        });
+
+        function startRecording() {
+            try {
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                hasAudio = false;
+                recordingStartTime = Date.now();
+
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const recordingLength = Date.now() - recordingStartTime;
+                    
+                    // Check if recording is long enough and has audio
+                    if (recordingLength < MIN_RECORDING_LENGTH) {
+                        status.textContent = 'Recording too short. Try again.';
+                        setTimeout(() => {
+                            status.textContent = 'Tap to speak';
+                        }, 2000);
+                        return;
+                    }
+
+                    if (!hasAudio) {
+                        status.textContent = 'No speech detected. Try again.';
+                        setTimeout(() => {
+                            status.textContent = 'Tap to speak';
+                        }, 2000);
+                        return;
+                    }
+
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    await sendAudioToBackend(audioBlob);
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+
+                orb.classList.add('recording');
+                status.textContent = 'Listening...';
+                hint.style.display = 'none';
+
+                visualize();
+
+            } catch (error) {
+                console.error('Recording error:', error);
+                showError('Failed to start recording');
+            }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                isRecording = false;
+
+                orb.classList.remove('recording');
+                status.textContent = 'Processing...';
+
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                }
+                ctx.clearRect(0, 0, visualizer.width, visualizer.height);
+            }
+        }
+
+        function visualize() {
+            if (!isRecording) return;
+
+            animationId = requestAnimationFrame(visualize);
+            analyser.getByteFrequencyData(dataArray);
+
+            // Check if there's actual audio
+            const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+            if (average / 255 > MIN_AUDIO_LEVEL) {
+                hasAudio = true;
+            }
+
+            // Clear canvas
+            ctx.clearRect(0, 0, visualizer.width, visualizer.height);
+
+            // Draw visualizer
+            const centerX = visualizer.width / 2;
+            const centerY = visualizer.height / 2;
+            const radius = 80;
+            const bars = 50;
+
+            for (let i = 0; i < bars; i++) {
+                const barIndex = Math.floor(i * dataArray.length / bars);
+                const barHeight = (dataArray[barIndex] / 255) * 40;
+                
+                const angle = (i / bars) * Math.PI * 2;
+                const x1 = centerX + Math.cos(angle) * radius;
+                const y1 = centerY + Math.sin(angle) * radius;
+                const x2 = centerX + Math.cos(angle) * (radius + barHeight);
+                const y2 = centerY + Math.sin(angle) * (radius + barHeight);
+
+                ctx.strokeStyle = 'rgba(79, 172, 254, 0.8)';
+                ctx.lineWidth = 2.5;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+        }
+
+        async function sendAudioToBackend(audioBlob) {
+            try {
+                const formData = new FormData();
+                formData.append('data', audioBlob, 'audio.wav');
+
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+
+                const responseAudio = await response.blob();
+                const audioUrl = URL.createObjectURL(responseAudio);
+
+                audio.src = audioUrl;
+                audio.play();
+
+                status.textContent = 'Playing...';
+
+                audio.onended = () => {
+                    status.textContent = 'Tap to speak';
+                };
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Failed to process request');
+                status.textContent = 'Tap to speak';
+            }
+        }
+
+        function showError(message) {
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+            setTimeout(() => {
+                errorEl.classList.remove('show');
+            }, 4000);
+        }
+    </script>
+</body>
+</html>
