@@ -1,0 +1,344 @@
+{
+  "name": "AI Voice Agent (Guardrail)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "fc6c67ca-dcd3-4b68-bd9a-c6ef73f16a2a",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "4f50e121-8972-4578-a6ac-a0091d725138",
+      "name": "Webhook",
+      "webhookId": "fc6c67ca-dcd3-4b68-bd9a-c6ef73f16a2a"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/audio/transcriptions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "whisper-1"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "a9252c7b-ddde-4e6d-8f5f-5029e3fbb032",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "d0lT8rBaZUiDwEMe",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('HTTP Request').item.json.text }}",
+        "options": {
+          "systemMessage": "You are Carmen, a conversational Spanish tutor.\n\nAUTONOMOUS DECISION MAKING:\n- If user asks 'how do I say X', teach the word clearly\n- If user attempts Spanish, assess and encourage\n- If user wants conversation, switch to conversational mode\n- Adapt difficulty based on their responses\n\nRULES:\n- Keep responses SHORT for voice (2-3 sentences max)\n- Always end with a question or prompt to continue\n- Be warm and encouraging\n- Mix English (70%) and Spanish (30%)\n\nExample:\nUser: 'How do I say thank you?'\nYou: 'In Spanish, it's gracias - gra-ci-as. Can you say that for me?'"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "c5fd71b8-c382-47d8-bc5f-1461e59a7d02",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1024,
+        208
+      ],
+      "id": "d509cc98-e0d5-4f5a-9429-88bf03729f37",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "8uybHgW83jhnJgSE",
+          "name": "OpenAi n8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "binary",
+        "responseDataSource": "set",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1600,
+        0
+      ],
+      "id": "4881005c-90be-49cc-86f0-235ec4c5cbbd",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/audio/speech",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"tts-1\",\n  \"voice\": \"shimmer\",\n  \"input\": {{ JSON.stringify($json.output) }}\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1392,
+        0
+      ],
+      "id": "c9041fe6-1b13-4d76-b31b-f416eb6f4021",
+      "name": "HTTP Request1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "d0lT8rBaZUiDwEMe",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/moderations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"input\": \"{{ $json.text }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "beab7e8e-de2c-4908-9010-55b9a601024a",
+      "name": "Moderation Check",
+      "credentials": {
+        "openAiApi": {
+          "id": "8uybHgW83jhnJgSE",
+          "name": "OpenAi n8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f8aa769b-1e8e-48f5-99a2-982165c64273",
+              "leftValue": "={{ $json.results[0].flagged }}",
+              "rightValue": "false",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        624,
+        0
+      ],
+      "id": "f162c799-3240-4774-ad9a-5dfa979cabd1",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/audio/speech",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"model\": \"tts-1\",\n  \"voice\": \"shimmer\",\n  \"input\": \"I'm here to help you learn Spanish in a positive way. Let's keep our conversation focused on language learning!\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1072,
+        400
+      ],
+      "id": "8135fad5-43ab-4e99-897d-3d16582bc16e",
+      "name": "HTTP Request2",
+      "credentials": {
+        "openAiApi": {
+          "id": "8uybHgW83jhnJgSE",
+          "name": "OpenAi n8n"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Moderation Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Moderation Check": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a26a47dc-7608-48ad-8b49-baabfa0dffe5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bd6f1ab15675cf9fe7d9ec4a56396567ae302e494b48c733c014e88211b72ae9"
+  },
+  "id": "V0QTBvmY2SybY4cm",
+  "tags": []
+}

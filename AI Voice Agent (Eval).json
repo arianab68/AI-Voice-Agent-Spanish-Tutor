@@ -1,0 +1,243 @@
+{
+  "name": "AI Voice Agent (Eval)",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.input }}",
+        "options": {
+          "systemMessage": "You are Carmen, a conversational Spanish tutor.\n\nAUTONOMOUS DECISION MAKING:\n- If user asks 'how do I say X', teach the word clearly\n- If user attempts Spanish, assess and encourage\n- If user wants conversation, switch to conversational mode\n- Adapt difficulty based on their responses\n\nRULES:\n- Keep responses SHORT for voice (2-3 sentences max)\n- Always end with a question or prompt to continue\n- Be warm and encouraging\n- Mix English (70%) and Spanish (30%)\n\nExample:\nUser: 'How do I say thank you?'\nYou: 'In Spanish, it's gracias - gra-ci-as. Can you say that for me?'"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "c9b59d82-da20-44e2-a7cf-573f6f693a85",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        400,
+        208
+      ],
+      "id": "f2a38f9e-4ecc-40d5-bdd9-90a4217e269e",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "8uybHgW83jhnJgSE",
+          "name": "OpenAi n8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1FYaN7Du9LpDDyp8lZbDNiwYC7yBeU_KyKfXhtyekYA0",
+          "mode": "list",
+          "cachedResultName": "Carmen Evaluation Input",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FYaN7Du9LpDDyp8lZbDNiwYC7yBeU_KyKfXhtyekYA0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FYaN7Du9LpDDyp8lZbDNiwYC7yBeU_KyKfXhtyekYA0/edit#gid=0"
+        }
+      },
+      "type": "n8n-nodes-base.evaluationTrigger",
+      "typeVersion": 4.6,
+      "position": [
+        160,
+        0
+      ],
+      "id": "52f73305-4eb0-47d3-aea0-41fdfe6c4378",
+      "name": "When fetching a dataset row",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rIpYGVNDcZdBDx0a",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1FYaN7Du9LpDDyp8lZbDNiwYC7yBeU_KyKfXhtyekYA0",
+          "mode": "list",
+          "cachedResultName": "Carmen Evaluation Input",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FYaN7Du9LpDDyp8lZbDNiwYC7yBeU_KyKfXhtyekYA0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FYaN7Du9LpDDyp8lZbDNiwYC7yBeU_KyKfXhtyekYA0/edit#gid=0"
+        },
+        "outputs": {
+          "values": [
+            {
+              "outputName": "output",
+              "outputValue": "={{$json.output}}"
+            },
+            {
+              "outputName": "input",
+              "outputValue": "={{ $('When fetching a dataset row').item.json.input }}"
+            },
+            {
+              "outputName": "output",
+              "outputValue": "={{ $('AI Agent').item.json.output }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.evaluation",
+      "typeVersion": 4.7,
+      "position": [
+        1136,
+        0
+      ],
+      "id": "d779cf4e-dc47-4844-86ac-2fc5da983515",
+      "name": "Evaluation",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rIpYGVNDcZdBDx0a",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "setMetrics",
+        "metric": "helpfulness",
+        "userQuery": "={{ $('When fetching a dataset row').item.json.input }}",
+        "actualAnswer": "={{ $json[\"output\"] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.evaluation",
+      "typeVersion": 4.7,
+      "position": [
+        768,
+        0
+      ],
+      "id": "6aa7c1b8-670c-4891-81c6-841c62469756",
+      "name": "Set Metrics"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "gpt-3.5-turbo"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        912,
+        208
+      ],
+      "id": "7c6f17e6-3332-441a-babb-7bc1926cbc2d",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "8uybHgW83jhnJgSE",
+          "name": "OpenAi n8n"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Set Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When fetching a dataset row": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluation": {
+      "main": [
+        []
+      ]
+    },
+    "Set Metrics": {
+      "main": [
+        [
+          {
+            "node": "Evaluation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Set Metrics",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "98a1419f-811b-41fb-9ccc-0895bc7e579b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bd6f1ab15675cf9fe7d9ec4a56396567ae302e494b48c733c014e88211b72ae9"
+  },
+  "id": "nREzPtJIbejsg26L",
+  "tags": []
+}

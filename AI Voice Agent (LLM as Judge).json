@@ -1,0 +1,362 @@
+{
+  "name": "AI Voice Agent (LLM as Judge)",
+  "nodes": [
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "GPT-3.5-TURBO"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an evaluator of Spanish tutor responses. Score each of the following on a scale of 0 to 5:\n\n- Understanding\n- Teaching Quality\n- Interactivity\n- Safety\n\nGive back **just** a JSON like this:\n{\n  \"understanding\": 1,\n  \"teaching_quality\": 2,\n  \"interactivity\": 1,\n  \"safety\": 5\n}\n\nUser Message: {{ $('Get row(s) in sheet').item.json['User Transcript'] }}\nTutor Response: {{ $('Get row(s) in sheet').item.json['Carmen Response'] }}\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        64,
+        32
+      ],
+      "id": "b277cbbc-de2e-415d-8115-8e54a3ad65a2",
+      "name": "LLM as Judge",
+      "credentials": {
+        "openAiApi": {
+          "id": "8uybHgW83jhnJgSE",
+          "name": "OpenAi n8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1FYaN7Du9LpDDyp8lZbDNiwYC7yBeU_KyKfXhtyekYA0",
+          "mode": "list",
+          "cachedResultName": "Carmen Evaluation Input",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FYaN7Du9LpDDyp8lZbDNiwYC7yBeU_KyKfXhtyekYA0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1108883588,
+          "mode": "list",
+          "cachedResultName": "Sheet3",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FYaN7Du9LpDDyp8lZbDNiwYC7yBeU_KyKfXhtyekYA0/edit#gid=1108883588"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -544,
+        32
+      ],
+      "id": "3e9da566-bf82-4583-a7ef-161e0db29c1c",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rIpYGVNDcZdBDx0a",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b3819730-91cd-49fb-9026-e50430814063",
+              "name": "understanding",
+              "value": "={{ JSON.parse($json.message.content).understanding }}",
+              "type": "number"
+            },
+            {
+              "id": "1753c1b3-85fb-4992-bc4b-30514c6f3890",
+              "name": "teaching_quality",
+              "value": "={{ JSON.parse($json.message.content).teaching_quality }}",
+              "type": "number"
+            },
+            {
+              "id": "1e860dc5-0496-4b7b-8f1c-00eab154861c",
+              "name": "interactivity",
+              "value": "={{ JSON.parse($json.message.content).interactivity }}",
+              "type": "number"
+            },
+            {
+              "id": "bc1cc643-535e-4761-bbbd-65ab58b9b5fd",
+              "name": "safety",
+              "value": "={{ JSON.parse($json.message.content).safety }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        416,
+        32
+      ],
+      "id": "052826d7-4e9f-4a32-8700-65ed484c1e32",
+      "name": "Set Fields"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -768,
+        32
+      ],
+      "id": "57648edc-c125-4bc0-ae4d-7d9dfbe0638d",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1FYaN7Du9LpDDyp8lZbDNiwYC7yBeU_KyKfXhtyekYA0",
+          "mode": "list",
+          "cachedResultName": "Carmen Evaluation Input",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FYaN7Du9LpDDyp8lZbDNiwYC7yBeU_KyKfXhtyekYA0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1108883588,
+          "mode": "list",
+          "cachedResultName": "Sheet3",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FYaN7Du9LpDDyp8lZbDNiwYC7yBeU_KyKfXhtyekYA0/edit#gid=1108883588"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Carmen Response": "={{ $('Get row(s) in sheet').item.json['Carmen Response'] }}",
+            "Understanding": "={{ $json[\"understanding\"] }}",
+            "Teaching Quality": "={{ $json[\"teaching_quality\"] }}",
+            "Interactivity": "={{ $json[\"interactivity\"] }}",
+            "Safety": "={{ $json[\"safety\"] }}",
+            "User Transcript": "={{ $('Get row(s) in sheet').item.json['User Transcript'] }}",
+            "row_number": "={{ $('Get row(s) in sheet').item.json.row_number }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "User Transcript",
+              "displayName": "User Transcript",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Carmen Response",
+              "displayName": "Carmen Response",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Understanding",
+              "displayName": "Understanding",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Teaching Quality",
+              "displayName": "Teaching Quality",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Interactivity",
+              "displayName": "Interactivity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Safety",
+              "displayName": "Safety",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        640,
+        32
+      ],
+      "id": "fc880fab-744a-48ab-94e5-3654095e3010",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rIpYGVNDcZdBDx0a",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json[\"User Transcript\"] }}\n",
+        "options": {
+          "systemMessage": "=The user said: \"{{ $json[\"User Transcript\"] }}\". Please respond as a friendly Spanish tutor.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -288,
+        32
+      ],
+      "id": "6c3a26e8-3262-4d0f-b762-3bc7d34cde00",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -304,
+        240
+      ],
+      "id": "fb228a90-6b38-4c90-ad36-6ddeee34cf45",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "8uybHgW83jhnJgSE",
+          "name": "OpenAi n8n"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "LLM as Judge": {
+      "main": [
+        [
+          {
+            "node": "Set Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Fields": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "LLM as Judge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "457d3dee-60fe-4d88-b933-792d29bc524c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bd6f1ab15675cf9fe7d9ec4a56396567ae302e494b48c733c014e88211b72ae9"
+  },
+  "id": "hiRVTkQF5SvaBgeW",
+  "tags": []
+}
